@@ -66,7 +66,6 @@ export const setTyping = mutation({
 export const getTypingUsers = query({
   args: { conversationId: v.id("conversations"), currentUserId: v.string() },
   handler: async (ctx, args) => {
-    const twoSecondsAgo = Date.now() - 2000;
     const typing = await ctx.db
       .query("typingStatus")
       .withIndex("by_conversation", (q) =>
@@ -74,12 +73,7 @@ export const getTypingUsers = query({
       )
       .collect();
 
-    return typing
-      .filter(
-        (t) =>
-          t.userId !== args.currentUserId && t.lastTypedAt > twoSecondsAgo
-      )
-      .map((t) => t.userId);
+    return typing.filter((t) => t.userId !== args.currentUserId);
   },
 });
 

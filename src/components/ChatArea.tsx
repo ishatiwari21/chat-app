@@ -95,14 +95,27 @@ export default function ChatArea({
   }, [messages, isAtBottom]);
 
   useEffect(() => {
-    if (typingUsers && typingUsers.length > 0) {
-      setShowTyping(true);
-      const timer = setTimeout(() => setShowTyping(false), 2000);
-      return () => clearTimeout(timer);
-    } else {
-      setShowTyping(false);
-    }
+    const interval = setInterval(() => {
+      if (typingUsers && typingUsers.length > 0) {
+        const twoSecondsAgo = Date.now() - 2000;
+        const activeTypers = typingUsers.filter(
+          (t: { lastTypedAt: number }) => t.lastTypedAt > twoSecondsAgo
+        );
+        setShowTyping(activeTypers.length > 0);
+      } else {
+        setShowTyping(false);
+      }
+    }, 500);
+    return () => clearInterval(interval);
   }, [typingUsers]);
+
+  useEffect(() => {
+    if (!newMessage) return;
+    const interval = setInterval(() => {
+      setTyping({ conversationId, userId: currentUserClerkId });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [newMessage, conversationId, currentUserClerkId]);
 
   const handleScroll = () => {
     const container = scrollContainerRef.current;
@@ -166,7 +179,6 @@ export default function ChatArea({
 
   return (
     <div className="flex flex-col h-full relative">
-      
       <div className="p-4 border-b border-slate-800 flex items-center gap-3">
         <button
           onClick={onBack}
@@ -244,7 +256,11 @@ export default function ChatArea({
                 </div>
 
                 {!msg.deleted && (
-                  <div className={`flex gap-1 mt-1 flex-wrap ${isMe ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`flex gap-1 mt-1 flex-wrap ${
+                      isMe ? "justify-end" : "justify-start"
+                    }`}
+                  >
                     {msgReactions.map((r) => (
                       <button
                         key={r.emoji}
